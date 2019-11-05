@@ -30,16 +30,6 @@ func (a AlerMessages) Less(i, j int) bool {    // 重写 Less() 方法， 从大
 	return a[j].Annotations.Level < a[i].Annotations.Level
 }
 
-//alert history接口
-func (c *PrometheusController) PrometheusAlertList() {
-	//{"receiver":"web\\.hook","status":"firing","alerts":[{"status":"firing","labels":{"alertname":"Node_alert","instance":"192.168.10.5:9100","job":"node1","monitor":"node1","node":"alert"},"annotations":{"description":"If one more node goes down the node will be unavailable","summary":"192.168.10.5:9100 node goes down!(current value: 0.2s)"},"startsAt":"2018-08-01T02:01:44.71271343-04:00","endsAt":"0001-01-01T00:00:00Z","generatorURL":"http://localhost.localdomain:9090/graph?g0.expr=node_load1+%3E+0.1\u0026g0.tab=1"}],"groupLabels":{"alertname":"Node_alert"},"commonLabels":{"alertname":"Node_alert","instance":"192.168.10.5:9100","job":"node1","monitor":"node1","node":"alert"},"commonAnnotations":{"description":"If one more node goes down the node will be unavailable","summary":"192.168.10.5:9100 node goes down!(current value: 0.2s)"},"externalURL":"http://localhost.localdomain:9093","version":"4","groupKey":"{}:{alertname=\"Node_alert\"}"}
-	alert,err := logic.GetAlertList()
-	log.Println("err:",err)
-	res,err := json.Marshal(alert)
-	c.Data["json"]= string(res)
-	log.Println(c.Data["json"])
-	c.ServeJSON()
-}
 
 //for prometheus alert
 //关于告警级别level共有5个级别,0-4,0 信息,1 警告,2 一般严重,3 严重,4 灾难
