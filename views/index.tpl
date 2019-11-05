@@ -62,9 +62,9 @@
   <header> 
    <h1 class="logo">Welcome to Prometheus Alert System</h1> 
    <div class="description"> 
-    <a href="https://github.com/feiyu563/PrometheusAlert">Go to My GitHub and find how to use it or get new version !</a> 
-    <p>  Contact me: </p> 
-    <p> <img height="10%" width="10%" src="/static/img/wx.png" /> </p> 
+    <a href="https://github.com/dbaicss/PrometheusAlert">welcome to My GitHub!</a>
+    <!--p>  Contact me: </p>
+    <p> <img height="10%" width="10%" src="/static/img/wx.png" /> </p-->
    </div> 
   </header> 
   <script src="/static/js/reload.min.js"></script>  

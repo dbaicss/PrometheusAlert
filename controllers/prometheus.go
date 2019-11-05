@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"PrometheusAlert/logic"
+	"PrometheusAlert/model"
 	"encoding/json"
 	"github.com/astaxie/beego"
 	"log"
@@ -14,33 +16,9 @@ type PrometheusController struct {
 	beego.Controller
 }
 
-type Labels struct{
-	Alertname string `json:"alertname"`
-	Instance string `json:"instance"`
-}
-type Annotations struct{
-	Description string `json:"description"`
-	Summary string `json:"summary"`
-	Level string `json:"level"`  //2019年2月15日 19:03:07 增加告警级别
-	Mobile string `json:"mobile"` //2019年2月25日 19:09:23 增加手机号支持
-	Ddurl string `json:"ddurl"` //2019年3月12日 20:33:38 增加多个钉钉告警支持
-}
-type Alerts struct {
-	Labels Labels `json:"labels"`
-	Annotations Annotations `json:"annotations"`
-	StartsAt string `json:"startsAt"`
-	EndsAt string `json:"endsAt"`
-	GeneratorUrl string `json:"generatorURL"` //prometheus 告警返回地址
-}
-type Prometheus struct {
-	Status string
-	Alerts []Alerts
-	Externalurl string `json:"externalURL"` //alertmanage 返回地址
-}
-
 
 // 按照 Alert.Level 从大到小排序
-type AlerMessages [] Alerts
+type AlerMessages [] model.Alerts
 
 func (a AlerMessages) Len() int {         // 重写 Len() 方法
 	return len(a)
@@ -52,14 +30,26 @@ func (a AlerMessages) Less(i, j int) bool {    // 重写 Less() 方法， 从大
 	return a[j].Annotations.Level < a[i].Annotations.Level
 }
 
+//alert history接口
+func (c *PrometheusController) PrometheusAlertList() {
+	//{"receiver":"web\\.hook","status":"firing","alerts":[{"status":"firing","labels":{"alertname":"Node_alert","instance":"192.168.10.5:9100","job":"node1","monitor":"node1","node":"alert"},"annotations":{"description":"If one more node goes down the node will be unavailable","summary":"192.168.10.5:9100 node goes down!(current value: 0.2s)"},"startsAt":"2018-08-01T02:01:44.71271343-04:00","endsAt":"0001-01-01T00:00:00Z","generatorURL":"http://localhost.localdomain:9090/graph?g0.expr=node_load1+%3E+0.1\u0026g0.tab=1"}],"groupLabels":{"alertname":"Node_alert"},"commonLabels":{"alertname":"Node_alert","instance":"192.168.10.5:9100","job":"node1","monitor":"node1","node":"alert"},"commonAnnotations":{"description":"If one more node goes down the node will be unavailable","summary":"192.168.10.5:9100 node goes down!(current value: 0.2s)"},"externalURL":"http://localhost.localdomain:9093","version":"4","groupKey":"{}:{alertname=\"Node_alert\"}"}
+	alert,err := logic.GetAlertList()
+	log.Println("err:",err)
+	res,err := json.Marshal(alert)
+	c.Data["json"]= string(res)
+	log.Println(c.Data["json"])
+	c.ServeJSON()
+}
+
 //for prometheus alert
 //关于告警级别level共有5个级别,0-4,0 信息,1 警告,2 一般严重,3 严重,4 灾难
 func (c *PrometheusController) PrometheusAlert() {
 	//{"receiver":"web\\.hook","status":"firing","alerts":[{"status":"firing","labels":{"alertname":"Node_alert","instance":"192.168.10.5:9100","job":"node1","monitor":"node1","node":"alert"},"annotations":{"description":"If one more node goes down the node will be unavailable","summary":"192.168.10.5:9100 node goes down!(current value: 0.2s)"},"startsAt":"2018-08-01T02:01:44.71271343-04:00","endsAt":"0001-01-01T00:00:00Z","generatorURL":"http://localhost.localdomain:9090/graph?g0.expr=node_load1+%3E+0.1\u0026g0.tab=1"}],"groupLabels":{"alertname":"Node_alert"},"commonLabels":{"alertname":"Node_alert","instance":"192.168.10.5:9100","job":"node1","monitor":"node1","node":"alert"},"commonAnnotations":{"description":"If one more node goes down the node will be unavailable","summary":"192.168.10.5:9100 node goes down!(current value: 0.2s)"},"externalURL":"http://localhost.localdomain:9093","version":"4","groupKey":"{}:{alertname=\"Node_alert\"}"}
-	alert:=Prometheus{}
+	alert:=model.Prometheus{}
 	log.SetPrefix("[DEBUG 1]")
 	log.Println(string(c.Ctx.Input.RequestBody))
 	json.Unmarshal(c.Ctx.Input.RequestBody, &alert)
+	logic.InsertAlertListRecord(&alert)
 	c.Data["json"]=SendMessageP(alert)
 	log.SetPrefix("[DEBUG 3]")
 	log.Println(c.Data["json"])
@@ -75,7 +65,7 @@ func GetCSTtime(date string)(string)  {
 	tm:=tm3.Format("2006-01-02 15:04:05")
 	return tm
 }
-func SendMessageP(message Prometheus)(string)  {
+func SendMessageP(message model.Prometheus)(string)  {
 	WebhookType:=beego.AppConfig.String("webhook_type")
 	Title:=beego.AppConfig.String("title")
 	//Alerturl:=beego.AppConfig.String("alerturl")
